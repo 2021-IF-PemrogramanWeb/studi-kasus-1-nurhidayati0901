@@ -1,12 +1,26 @@
 <?php
 session_start();
+require 'config.php';
+
+// cek cookie
+if(isset($_COOKIE['id']) && isset($_COOKIE['key'])) {
+    $id = $_COOKIE['id'];
+    $key = $_COOKIE['key']; 
+
+    // retrieve username by id
+     $result = mysqli_query($db, "SELECT username FROM users WHERE id = $id");
+     $row = mysqli_fetch_assoc($result);
+
+     // cek cookie and username
+     if($key === hash('sha256', $row['username'])) {
+        $_SESSION['login'] = true;
+     }
+}
 
 if ( isset($_SESSION["login"]) ) {
     header("Location: index.php");
     exit;
 }
-
-require 'config.php';
 
 if( isset($_POST["login"]) ) {
     
@@ -23,6 +37,13 @@ if( isset($_POST["login"]) ) {
         if( password_verify($password, $row["password"]) ) {
             // session
             $_SESSION["login"] = true;
+
+            // remember me
+            if(isset($_POST['remember'])) {
+                // cookie
+                setcookie('id',  $row['id'] , time() + 60);
+                setcookie('key', hash('sha256', $row['username']), time() + 60);
+            }
 
             header("Location: index.php");
             exit;
@@ -83,6 +104,12 @@ if( isset($_POST["login"]) ) {
                             <div class="input-group-text">
                             <span class="fas fa-lock"></span>
                             </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="icheck-primary">
+                            <input type="checkbox" id="remember">
+                            <label for="remember">Remember me</label>
                         </div>
                     </div>
                     <div class="row justify-content-md-center">
